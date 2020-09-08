@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "zeeqs.fullname" . }}
+  labels:
+{{ include "zeeqs.labels" . | indent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "zeeqs.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "zeeqs.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      serviceAccountName: {{ template "zeeqs.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ default .Chart.AppVersion .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: "spring.datasource.url"
+              value: {{ .Values.database.url }}
+            - name: "spring.datasource.driverClassName"
+              value: {{ .Values.database.driverClassName }}
+            - name: "spring.jpa.database-platform"
+              value: {{ .Values.database.platform }}
+{{- if .Values.env.enabled }}
+{{ toYaml .Values.env.values | indent 12 -}}
+{{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.internalPort }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.livenessProbe.path }}
+              port: http
+            initialDelaySeconds: {{ default 150 .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ default 30 .Values.livenessProbe.periodSeconds }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.readinessProbe.path }}
+              port: http
+            initialDelaySeconds: {{ default 60 .Values.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ default 15 .Values.readinessProbe.periodSeconds }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- if .Values.config.enabled }}
+          volumeMounts:
+            - mountPath: {{ .Values.config.mountPath }}
+              name: {{ include "zeeqs.fullname" . }}
+          {{- end }}
+      {{- if .Values.config.enabled }}
+      volumes:
+        - name: {{ include "zeeqs.fullname" . }}
+          configMap:
+            name: {{ include "zeeqs.fullname" . }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
