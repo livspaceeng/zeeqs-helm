@@ -57,17 +57,39 @@ spec:
             periodSeconds: {{ default 15 .Values.readinessProbe.periodSeconds }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
-          {{- if .Values.config.enabled }}
           volumeMounts:
+            {{- if .Values.init.volume.enabled }}
+            - name: {{ .Values.init.volume.name }}
+              mountPath: {{ .Values.init.volume.libsMountPath }}
+            {{- end }}
+            {{- if .Values.config.enabled }}
             - mountPath: {{ .Values.config.mountPath }}
               name: {{ include "zeeqs.fullname" . }}
-          {{- end }}
-      {{- if .Values.config.enabled }}
+            {{- end }}
+      {{- if .Values.init.enabled }}
+      # This container will be run during pod initialization
+      initContainers:
+      - name: {{ .Chart.Name }}-init
+        image: "{{ .Values.init.image.repository }}:{{ .Values.init.image.tag }}"
+        imagePullPolicy: {{ .Values.init.image.pullPolicy }}
+        command:
+{{ toYaml .Values.init.command | indent 8 -}}
+        {{- if .Values.init.volume.enabled }}
+        volumeMounts:
+        - mountPath: {{ .Values.init.volume.mountPath }}
+          name: {{ .Values.init.volume.name }}
+        {{- end }}
+      {{- end }}
       volumes:
+        {{- if .Values.init.volume.enabled }}
+        - name: {{ .Values.init.volume.name }}
+          emptyDir: {}
+        {{- end }}
+        {{- if .Values.config.enabled }}
         - name: {{ include "zeeqs.fullname" . }}
           configMap:
             name: {{ include "zeeqs.fullname" . }}
-      {{- end }}
+        {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

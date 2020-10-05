@@ -9,6 +9,23 @@ image:
   tag: latest
   pullPolicy: IfNotPresent
 
+init:
+  enabled: true
+  image:
+    repository: busybox
+    tag: latest
+    pullPolicy: IfNotPresent
+  command:
+    - wget
+    - "-O"
+    - "/downloads/postgresql-42.2.16.jar"
+    - https://jdbc.postgresql.org/download/postgresql-42.2.16.jar
+  volume:
+    enabled: true
+    mountPath: "/downloads"
+    name: externalJars
+    libsMountPath: "/app/libs"
+
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
@@ -81,7 +98,7 @@ resources:
 
 config:
   enabled: false
-  mountPath: /app/libs
+  mountPath: /etc/zeeqs
   files:
     config.yml: |-
       {}
