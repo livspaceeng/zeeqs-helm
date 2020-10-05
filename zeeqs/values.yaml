@@ -23,7 +23,7 @@ init:
   volume:
     enabled: true
     mountPath: "/downloads"
-    name: externalJars
+    name: external-jars
     libsMountPath: "/app/libs"
 
 imagePullSecrets: []
