@@ -24,7 +24,8 @@ init:
     enabled: true
     mountPath: "/downloads"
     name: external-jars
-    libsMountPath: "/app/libs"
+    libsMountPath: "/app/libs/postgresql-42.2.16.jar"
+    subPath: "postgresql-42.2.16.jar"
 
 imagePullSecrets: []
 nameOverride: ""
@@ -34,6 +35,7 @@ database:
   url: "jdbc:postgresql://postgres-dev:5432/zeeqs"
   driverClassName: "org.postgresql.Driver"
   platform: "org.hibernate.dialect.PostgreSQLDialect"
+  ddl: "update"
 
 service:
   type: ClusterIP
