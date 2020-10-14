@@ -41,6 +41,10 @@ service:
   type: ClusterIP
   port: 80
   internalPort: 9000
+  gateway:
+    enabled: false
+    routes:
+      api: {}
 
 livenessProbe:
   initialDelaySeconds: 150
